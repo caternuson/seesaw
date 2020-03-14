@@ -4,7 +4,7 @@ include boards/$(BOARD)/board.mk
 CC=arm-none-eabi-gcc
 CXX=arm-none-eabi-g++
 
-ifeq ($(DEBUG), 1)
+ifeq ($(LOGGING), 1)
 ENABLE_LOGGING = -DENABLE_LOGGING
 else
 ENABLE_LOGGING =
@@ -40,6 +40,10 @@ QPPORT = lib/qp/ports/arm-cm/qxk/gnu
 INCLUDES = -I. -I./include -I./include/USB -I./bsp -I./lib/qp/extras -I./lib/qp/include -I./lib/qp/source -I$(QPPORT)
 INCLUDES += -I./boards/$(BOARD) -Ilib/cmsis/CMSIS/Include
 INCLUDES += -I$(BUILD_PATH)
+
+ifeq ($(DEBUG), 1)
+CFLAGS += -ggdb
+endif
 
 ifeq ($(CHIP_FAMILY), SAMD21)
 INCLUDES += -Ilib/samd21/samd21a/include/
