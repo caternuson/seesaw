@@ -122,6 +122,7 @@ SOURCES = $(COMMON_SRC) \
 	bsp/pinmux.cpp \
 	bsp/bsp_neopix.cpp \
 	bsp/adafruit_ptc.cpp \
+	source/Foo.cpp \
 
 ifeq ($(CHIP_FAMILY), SAMD21)
 FULL_SOURCES = $(SOURCES) \

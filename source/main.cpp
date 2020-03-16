@@ -3,7 +3,7 @@
  *
  * Created: 7/17/2017 3:26:42 PM
  * Author : deanm
- */ 
+ */
 
 
 #include "sam.h"
@@ -35,6 +35,7 @@
 #include "AOKeypad.h"
 #include "AOUSB.h"
 #include "AOEncoder.h"
+#include "Foo.h"
 
 #include "bsp_gpio.h"
 
@@ -112,24 +113,26 @@ static AOUSB usb;
 static AOEncoder encoder;
 #endif
 
+static Foo foo;
+
 int main(void)
 {
     /* Initialize the SAM system */
     SystemInit();
 	board_init();
-	
+
 	QF::init();
 	QF::poolInit(evtPoolSmall, sizeof(evtPoolSmall), EVT_SIZE_SMALL);
 	QF::poolInit(evtPoolMedium, sizeof(evtPoolMedium), EVT_SIZE_MEDIUM);
 	QF::poolInit(evtPoolLarge, sizeof(evtPoolLarge), EVT_SIZE_LARGE);
 	QP::QF::psInit(subscrSto, Q_DIM(subscrSto)); // init publish-subscribe
-	
+
 	BspInit();
 
 	//Start active objects.
 	sys.Start(PRIO_SYSTEM);
 	del.Start(PRIO_DELEGATE);
-	
+
 #if CONFIG_I2C_SLAVE
 	i2c.Start(PRIO_I2C_SLAVE);
 #endif
@@ -137,7 +140,7 @@ int main(void)
 #if CONFIG_SPI_SLAVE
 	spi.Start(PRIO_SPI_SLAVE);
 #endif
-	
+
 #if CONFIG_ADC
 	adc.Start(PRIO_ADC);
 #endif
@@ -193,10 +196,12 @@ int main(void)
 #if CONFIG_ENCODER
 	encoder.Start(PRIO_ENCODER);
 #endif
-	
+
+    foo.Start(PRIO_FOO);
+
 	//publish a start request
 	Evt *evt = new SystemStartReq(0);
 	QF::PUBLISH(evt, dummy);
-	
+
 	QP::QF::run();
 }

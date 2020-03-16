@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) Lawrence Lo (https://github.com/galliumstudio). 
+ * Copyright (C) Lawrence Lo (https://github.com/galliumstudio).
  * All rights reserved.
  *
  * This program is open source software: you can redistribute it and/or
@@ -101,7 +101,7 @@ char const * const eventName[] = {
 	"USB_START_CFM",
 	"USB_STOP_REQ",
 	"USB_STOP_CFM",
-    
+
     "DAP_START_REQ",
     "DAP_START_CFM",
     "DAP_STOP_REQ",
@@ -156,9 +156,12 @@ char const * const eventName[] = {
 	"ENCODER_STOP_REQ",
 	"ENCODER_STOP_CFM",
 	"ENCODER_READ_REG_REQ",
-	"ENCODER_WRITE_REG_REQ"
-};  
-  
+	"ENCODER_WRITE_REG_REQ",
+
+    "FOO_READ_REG_REQ",
+    "FOO_WRITE_REG_REQ"
+};
+
 char const * GetEvtName(QP::QSignal sig) {
     Q_ASSERT(sig < ARRAY_COUNT(eventName));
     if (sig < MAX_PUB_SIG) {

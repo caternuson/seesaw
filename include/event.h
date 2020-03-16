@@ -164,6 +164,11 @@ enum {
 	ENCODER_READ_REG_REQ,
 	ENCODER_WRITE_REG_REQ,
 
+    FOO_START_REQ,
+    FOO_STOP_REQ,
+    FOO_READ_REG_REQ,
+    FOO_WRITE_REG_REQ,
+
     MAX_PUB_SIG
 };
 
@@ -793,6 +798,35 @@ class EncoderWriteRegReq : public Evt {
 	public:
 	EncoderWriteRegReq(uint8_t reg, int32_t value) :
 	Evt(ENCODER_WRITE_REG_REQ), _reg(reg), _value(value) {}
+
+	uint8_t getReg() const { return _reg; }
+	int32_t getValue() const { return _value; }
+
+	private:
+	uint8_t _reg;
+	int32_t _value;
+};
+
+//* ==========================  FOO ======================= *//
+
+class FooReadRegReq : public Evt {
+    public:
+    FooReadRegReq(uint8_t requesterId, uint8_t reg, Fifo *dest) :
+    Evt(FOO_READ_REG_REQ), _requesterId(requesterId), _reg(reg), _dest(dest) {}
+
+	uint8_t getRequesterId() const { return _requesterId; }
+	uint8_t getReg() const { return _reg; }
+	Fifo *getDest() const { return _dest; }
+
+	private:
+	uint8_t _requesterId, _reg;
+	Fifo *_dest;
+};
+
+class FooWriteRegReq : public Evt {
+	public:
+	FooWriteRegReq(uint8_t reg, int32_t value) :
+	Evt(FOO_WRITE_REG_REQ), _reg(reg), _value(value) {}
 
 	uint8_t getReg() const { return _reg; }
 	int32_t getValue() const { return _value; }

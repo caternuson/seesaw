@@ -51,7 +51,7 @@ Q_DEFINE_THIS_FILE
 using namespace FW;
 
 System::System() :
-    QActive((QStateHandler)&System::InitialPseudoState), 
+    QActive((QStateHandler)&System::InitialPseudoState),
     m_id(SYSTEM), m_name("SYSTEM")
 #if CONFIG_POWER_SENSE
     ,m_powerSenseTimer(this, SYSTEM_POWER_SENSE_TIMER)
@@ -59,7 +59,7 @@ System::System() :
 #endif
 #if CONFIG_I2C_SLAVE
     ,m_I2CSlaveOutFifo(m_I2CSlaveOutFifoStor, I2C_SLAVE_OUT_FIFO_ORDER),
-    m_I2CSlaveInFifo(m_I2CSlaveInFifoStor, I2C_SLAVE_IN_FIFO_ORDER) 
+    m_I2CSlaveInFifo(m_I2CSlaveInFifoStor, I2C_SLAVE_IN_FIFO_ORDER)
 #endif
 
 #if CONFIG_SPI_SLAVE
@@ -109,7 +109,7 @@ QState System::InitialPseudoState(System * const me, QEvt const * const e) {
 #endif
     me->subscribe(SYSTEM_DONE);
     me->subscribe(SYSTEM_FAIL);
-	
+
 #if CONFIG_I2C_SLAVE
 	me->subscribe(I2C_SLAVE_START_CFM);
 	me->subscribe(I2C_SLAVE_STOP_CFM);
@@ -124,30 +124,30 @@ QState System::InitialPseudoState(System * const me, QEvt const * const e) {
 	me->subscribe(SERCOM_START_CFM);
 	me->subscribe(SERCOM_STOP_CFM);
 #endif
-	
+
 #if CONFIG_ADC
 	me->subscribe(ADC_START_CFM);
 	me->subscribe(ADC_STOP_CFM);
 #endif
-	
+
 #if CONFIG_TIMER
 	me->subscribe(TIMER_START_CFM);
 	me->subscribe(TIMER_STOP_CFM);
-#endif	
+#endif
 
 #if CONFIG_DAC
 	me->subscribe(DAC_START_CFM);
 	me->subscribe(DAC_STOP_CFM);
 #endif
-	
+
 	me->subscribe(DELEGATE_START_CFM);
 	me->subscribe(DELEGATE_STOP_CFM);
-	
+
 #if CONFIG_INTERRUPT
 	me->subscribe(INTERRUPT_START_CFM);
 	me->subscribe(INTERRUPT_STOP_CFM);
 #endif
-	
+
 #if CONFIG_DAP
 	me->subscribe(DAP_START_CFM);
 	me->subscribe(DAP_STOP_CFM);
@@ -162,7 +162,7 @@ QState System::InitialPseudoState(System * const me, QEvt const * const e) {
 	me->subscribe(USB_START_CFM);
 	me->subscribe(USB_STOP_CFM);
 #endif
-      
+
 #if CONFIG_TOUCH
     me->subscribe(TOUCH_START_CFM);
     me->subscribe(TOUCH_STOP_CFM);
@@ -250,8 +250,8 @@ QState System::Stopping(System * const me, QEvt const * const e) {
 	switch (e->sig) {
 		case Q_ENTRY_SIG: {
 			LOG_EVENT(e);
-			me->m_cfmCount = 0;			
-						
+			me->m_cfmCount = 0;
+
 			Evt *evt = new Evt(DELEGATE_STOP_REQ);
 			QF::PUBLISH(evt, me);
 
@@ -259,7 +259,7 @@ QState System::Stopping(System * const me, QEvt const * const e) {
 			evt = new Evt(INTERRUPT_STOP_REQ);
 			QF::PUBLISH(evt, me);
 #endif
-			
+
 #if CONFIG_I2C_SLAVE
 			evt = new Evt(I2C_SLAVE_STOP_REQ);
 			QF::PUBLISH(evt, me);
@@ -270,12 +270,12 @@ QState System::Stopping(System * const me, QEvt const * const e) {
 			QF::PUBLISH(evt, me);
 #endif
 
-#if CONFIG_DAC			
+#if CONFIG_DAC
 			evt = new Evt(DAC_STOP_REQ);
 			QF::PUBLISH(evt, me);
 #endif
 
-#if CONFIG_ADC			
+#if CONFIG_ADC
 			evt = new Evt(ADC_STOP_REQ);
 			QF::PUBLISH(evt, me);
 #endif
@@ -301,7 +301,7 @@ QState System::Stopping(System * const me, QEvt const * const e) {
 			QF::PUBLISH(evt, me);
 #endif
 
-#if CONFIG_SERCOM5			
+#if CONFIG_SERCOM5
 			evt = new Evt(SERCOM_STOP_REQ);
 			QF::PUBLISH(evt, me);
 #endif
@@ -320,7 +320,7 @@ QState System::Stopping(System * const me, QEvt const * const e) {
 			evt = new Evt(USB_STOP_REQ);
 			QF::PUBLISH(evt, me);
 #endif
-			
+
 #if CONFIG_TOUCH
             evt = new Evt(TOUCH_STOP_REQ);
             QF::PUBLISH(evt, me);
@@ -344,7 +344,7 @@ QState System::Stopping(System * const me, QEvt const * const e) {
 			status = Q_HANDLED();
 			break;
 		}
-		
+
 		case ADC_STOP_CFM:
 		case DAC_STOP_CFM:
 		case TIMER_STOP_CFM:
@@ -364,7 +364,7 @@ QState System::Stopping(System * const me, QEvt const * const e) {
 			status = Q_HANDLED();
 			break;
 		}
-		
+
 		case SYSTEM_FAIL:
 			Q_ASSERT(0);
 			status = Q_HANDLED();
@@ -389,12 +389,12 @@ QState System::Starting(System * const me, QEvt const * const e) {
 	switch (e->sig) {
 		case Q_ENTRY_SIG: {
 			LOG_EVENT(e);
-			me->m_cfmCount = 0;	
-			
+			me->m_cfmCount = 0;
+
 			//start objects
 			Evt *evt = new Evt(DELEGATE_START_REQ);
 			QF::PUBLISH(evt, me);
-			
+
 #if CONFIG_INTERRUPT
 			evt = new Evt(INTERRUPT_START_REQ);
 			QF::PUBLISH(evt, me);
@@ -410,11 +410,11 @@ QState System::Starting(System * const me, QEvt const * const e) {
 			QF::PUBLISH(evt, me);
 #endif
 
-#if CONFIG_DAC		
+#if CONFIG_DAC
 			evt = new Evt(DAC_START_REQ);
 			QF::PUBLISH(evt, me);
 #endif
-			
+
 #if CONFIG_ADC
 			evt = new Evt(ADC_START_REQ);
 			QF::PUBLISH(evt, me);
@@ -476,6 +476,9 @@ QState System::Starting(System * const me, QEvt const * const e) {
             QF::PUBLISH(evt, me);
 #endif
 
+            evt = new Evt(FOO_START_REQ);
+            QF::PUBLISH(evt, me);
+
 #if CONFIG_POWER_SENSE
             gpio_init(PORTA, CONFIG_POWER_SENSE_NEOPIX_PIN, 1);
             uint32_t color = 0;
@@ -499,7 +502,7 @@ QState System::Starting(System * const me, QEvt const * const e) {
 			status = Q_HANDLED();
 			break;
 		}
-		
+
 		case ADC_START_CFM:
 		case TIMER_START_CFM:
 		case DAC_START_CFM:
@@ -522,7 +525,7 @@ QState System::Starting(System * const me, QEvt const * const e) {
 
 		case SYSTEM_FAIL:
 		//TODO:
-		
+
 		case SYSTEM_DONE: {
 			LOG_EVENT(e);
 			Evt *evt = new SystemStartCfm(me->m_savedInSeq, ERROR_SUCCESS);

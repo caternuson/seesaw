@@ -53,18 +53,18 @@ volatile uint32_t Delegate::m_inten = 0;
 volatile uint32_t Delegate::m_intflag = 0;
 
 Delegate::Delegate() :
-    QActive((QStateHandler)&Delegate::InitialPseudoState), 
+    QActive((QStateHandler)&Delegate::InitialPseudoState),
     m_id(DELEGATE), m_name("Delegate") {}
 
 QState Delegate::InitialPseudoState(Delegate * const me, QEvt const * const e) {
     (void)e;
-	
+
     me->subscribe(DELEGATE_START_REQ);
 	me->subscribe(DELEGATE_STOP_REQ);
-    
+
 	me->subscribe(DELEGATE_PROCESS_COMMAND);
 	me->subscribe(GPIO_INTERRUPT_RECEIVED);
-	
+
     return Q_TRAN(&Delegate::Root);
 }
 
@@ -118,11 +118,11 @@ QState Delegate::Stopped(Delegate * const me, QEvt const * const e) {
 			LOG_EVENT(e);
 			Delegate::m_inten = 0;
 			Delegate::m_intflag = 0;
-			
+
 			Evt const &req = EVT_CAST(*e);
 			Evt *evt = new DelegateStartCfm(req.GetSeq(), ERROR_SUCCESS);
 			QF::PUBLISH(evt, me);
-			
+
 			status = Q_TRAN(&Delegate::Started);
 			break;
 		}
@@ -144,7 +144,7 @@ QState Delegate::Started(Delegate * const me, QEvt const * const e) {
     switch (e->sig) {
         case Q_ENTRY_SIG: {
             LOG_EVENT(e);
-			
+
             status = Q_HANDLED();
             break;
         }
@@ -159,7 +159,7 @@ QState Delegate::Started(Delegate * const me, QEvt const * const e) {
 			uint8_t highByte = req.getHighByte();
 			uint8_t lowByte = req.getLowByte();
 			uint8_t len = req.getLen();
-			
+
 #ifdef ENABLE_LOGGING
             PRINT("DELEGATE_PROCESS_COMMAND: (0x%x, 0x%x) %i\n", highByte, lowByte, len);
 #endif
@@ -167,7 +167,7 @@ QState Delegate::Started(Delegate * const me, QEvt const * const e) {
 			if(!len){
 				//we are reading
 				switch(highByte){
-					
+
 					//We don't have a separate AO to handle STATUS or GPIO stuff since it's simple and a waste of resources
 					case SEESAW_STATUS_BASE: {
 						Fifo *fifo = req.getFifo();
@@ -231,14 +231,14 @@ QState Delegate::Started(Delegate * const me, QEvt const * const e) {
 #endif
 								Evt *evt = new DelegateDataReady(req.getRequesterId());
 								QF::PUBLISH(evt, me);
-								
+
 								//clear interrupt if interrupts are enabled
 								if(Delegate::m_inten > 0 && Delegate::m_intflag > 0){
 									Delegate::m_intflag = 0;
 									Evt *evt = new InterruptClearReq( SEESAW_INTERRUPT_GPIO );
 									QF::PUBLISH(evt, me);
 								}
-								
+
 								break;
 							}
 							case SEESAW_GPIO_INTFLAG: {
@@ -247,7 +247,7 @@ QState Delegate::Started(Delegate * const me, QEvt const * const e) {
 								fifo->Write(ret, 4);
 								Evt *evt = new DelegateDataReady(req.getRequesterId());
 								QF::PUBLISH(evt, me);
-								
+
 								//clear interrupt if interrupts are enabled
 								if(Delegate::m_inten > 0){
 									Delegate::m_intflag = 0;
@@ -317,7 +317,7 @@ QState Delegate::Started(Delegate * const me, QEvt const * const e) {
                     }
 #endif //TOUCH
 
-#if CONFIG_SERCOM0 || CONFIG_SERCOM1 || CONFIG_SERCOM2 || CONFIG_SERCOM3 || CONFIG_SERCOM4 || CONFIG_SERCOM5 
+#if CONFIG_SERCOM0 || CONFIG_SERCOM1 || CONFIG_SERCOM2 || CONFIG_SERCOM3 || CONFIG_SERCOM4 || CONFIG_SERCOM5
 					case SEESAW_SERCOM0_BASE:
 					case SEESAW_SERCOM1_BASE:
 					case SEESAW_SERCOM2_BASE:
@@ -368,13 +368,13 @@ QState Delegate::Started(Delegate * const me, QEvt const * const e) {
 					}
 #endif
 
-#if CONFIG_NEOPIXEL					
+#if CONFIG_NEOPIXEL
 					case SEESAW_NEOPIXEL_BASE:{
 						switch(lowByte){
 							case SEESAW_NEOPIXEL_SHOW:{
 								Evt *evt = new Evt(NEOPIXEL_SHOW_REQ);
 								QF::PUBLISH(evt, me);
-								
+
 								evt = new DelegateDataReady(req.getRequesterId());
 								QF::PUBLISH(evt, me);
 								break;
@@ -399,8 +399,13 @@ QState Delegate::Started(Delegate * const me, QEvt const * const e) {
 						break;
 					}
 #endif
-					
-					
+
+                    case SEESAW_FOO_BASE:{
+                      Evt *evt = new FooReadRegReq(req.getRequesterId(), lowByte, req.getFifo());
+                      QF::PUBLISH(evt, me);
+                      break;
+                    }
+
 					default:
 						//Unrecognized command or unreadable register. Do nothing.
 						Evt *evt = new DelegateDataReady(req.getRequesterId());
@@ -408,11 +413,11 @@ QState Delegate::Started(Delegate * const me, QEvt const * const e) {
 						break;
 				}
 			}
-			
+
 			else{
 				//we are writing
 				switch(highByte){
-				
+
 					//We don't have a separate AO to handle STATUS or GPIO stuff since it's simple and a waste of resources
 					case SEESAW_STATUS_BASE: {
 						switch(lowByte){
@@ -431,7 +436,7 @@ QState Delegate::Started(Delegate * const me, QEvt const * const e) {
 								uint8_t pins[4];
 								fifo->Read(pins, 4);
 								len-=4;
-								
+
 								uint32_t combined = ((uint32_t)pins[0] << 24) | ((uint32_t)pins[1] << 16) | ((uint32_t)pins[2] << 8) | (uint32_t)pins[3];
 
 								gpio_dirset_bulk(PORTA, combined & CONFIG_GPIO_A_MASK);
@@ -450,7 +455,7 @@ QState Delegate::Started(Delegate * const me, QEvt const * const e) {
 								uint8_t pins[4];
 								fifo->Read(pins, 4);
 								len-=4;
-								
+
 								uint32_t combined = ((uint32_t)pins[0] << 24) | ((uint32_t)pins[1] << 16) | ((uint32_t)pins[2] << 8) | (uint32_t)pins[3];
 								gpio_dirclr_bulk(PORTA, combined & CONFIG_GPIO_A_MASK);
 #ifdef HAS_PORTB
@@ -462,14 +467,14 @@ QState Delegate::Started(Delegate * const me, QEvt const * const e) {
                                     gpio_dirclr_bulk(PORTB, combined & CONFIG_GPIO_B_MASK);
                                 }
 #endif
-								
+
 								break;
 							}
 							case SEESAW_GPIO_BULK_SET: {
 								uint8_t pins[4];
 								fifo->Read(pins, 4);
 								len-=4;
-								
+
 								uint32_t combined = ((uint32_t)pins[0] << 24) | ((uint32_t)pins[1] << 16) | ((uint32_t)pins[2] << 8) | (uint32_t)pins[3];
 								gpio_outset_bulk(PORTA, combined & CONFIG_GPIO_A_MASK);
 #ifdef HAS_PORTB
@@ -487,7 +492,7 @@ QState Delegate::Started(Delegate * const me, QEvt const * const e) {
 								uint8_t pins[4];
 								fifo->Read(pins, 4);
 								len-=4;
-								
+
 								uint32_t combined = ((uint32_t)pins[0] << 24) | ((uint32_t)pins[1] << 16) | ((uint32_t)pins[2] << 8) | (uint32_t)pins[3];
 								gpio_outclr_bulk(PORTA, combined & CONFIG_GPIO_A_MASK);
 #ifdef HAS_PORTB
@@ -499,14 +504,14 @@ QState Delegate::Started(Delegate * const me, QEvt const * const e) {
                                     gpio_outclr_bulk(PORTB, combined & CONFIG_GPIO_B_MASK);
                                 }
 #endif
-								
+
 								break;
 							}
 							case SEESAW_GPIO_INTENSET: {
 								uint8_t pins[4];
 								fifo->Read(pins, 4);
 								len-=4;
-								
+
 								uint32_t combined = ((uint32_t)pins[0] << 24) | ((uint32_t)pins[1] << 16) | ((uint32_t)pins[2] << 8) | (uint32_t)pins[3];
 								Delegate::m_inten |= (combined  & CONFIG_GPIO_A_MASK);
 								break;
@@ -515,7 +520,7 @@ QState Delegate::Started(Delegate * const me, QEvt const * const e) {
 								uint8_t pins[4];
 								fifo->Read(pins, 4);
 								len-=4;
-								
+
 								uint32_t combined = ((uint32_t)pins[0] << 24) | ((uint32_t)pins[1] << 16) | ((uint32_t)pins[2] << 8) | (uint32_t)pins[3];
 								combined &= CONFIG_GPIO_A_MASK;
 								Delegate::m_inten &= !combined;
@@ -525,7 +530,7 @@ QState Delegate::Started(Delegate * const me, QEvt const * const e) {
 								uint8_t pins[4];
 								fifo->Read(pins, 4);
 								len-=4;
-								
+
 								uint32_t combined = ((uint32_t)pins[0] << 24) | ((uint32_t)pins[1] << 16) | ((uint32_t)pins[2] << 8) | (uint32_t)pins[3];
 								gpio_pullenset_bulk(combined & CONFIG_GPIO_A_MASK);
 #ifdef HAS_PORTB
@@ -543,7 +548,7 @@ QState Delegate::Started(Delegate * const me, QEvt const * const e) {
 								uint8_t pins[4];
 								fifo->Read(pins, 4);
 								len-=4;
-								
+
 								uint32_t combined = ((uint32_t)pins[0] << 24) | ((uint32_t)pins[1] << 16) | ((uint32_t)pins[2] << 8) | (uint32_t)pins[3];
 								gpio_pullenclr_bulk(combined & CONFIG_GPIO_A_MASK);
 #ifdef HAS_PORTB
@@ -573,10 +578,10 @@ QState Delegate::Started(Delegate * const me, QEvt const * const e) {
 								uint8_t dataByte = 0;
 								fifo->Read(&dataByte, 1);
 								len--;
-								
+
 								//read any extra bytes and discard
 								me->discard(fifo, len);
-								
+
 								Evt *evt = new ADCWriteRegReq(lowByte, dataByte);
 								QF::PUBLISH(evt, me);
 								break;
@@ -586,13 +591,13 @@ QState Delegate::Started(Delegate * const me, QEvt const * const e) {
 								uint8_t data[4];
 								fifo->Read(data, 4);
 								len-=4;
-								
+
 								//read any extra bytes and discard
 								me->discard(fifo, len);
-								
+
 								uint16_t ht = ((uint16_t)data[0] << 8) | data[1];
 								uint16_t lt = ((uint16_t)data[2] << 8) | data[3];
-								
+
 								Evt *evt = new ADCWriteWinmonThresh(ht, lt);
 								QF::PUBLISH(evt, me);
 								break;
@@ -601,7 +606,7 @@ QState Delegate::Started(Delegate * const me, QEvt const * const e) {
 						break;
 					}
 #endif // ADC
-					
+
 #if ( CONFIG_SERCOM0 | CONFIG_SERCOM1 | CONFIG_SERCOM2 | CONFIG_SERCOM3 | CONFIG_SERCOM4 | CONFIG_SERCOM5 )
 					case SEESAW_SERCOM0_BASE:
 					case SEESAW_SERCOM1_BASE:
@@ -617,10 +622,10 @@ QState Delegate::Started(Delegate * const me, QEvt const * const e) {
 								uint8_t dataByte = 0;
 								fifo->Read(&dataByte, 1);
 								len--;
-								
+
 								//read any extra bytes and discard
 								me->discard(fifo, len);
-								
+
 								Evt *evt = new SercomWriteRegReq(lowByte, dataByte);
 								QF::PUBLISH(evt, me);
 								break;
@@ -630,12 +635,12 @@ QState Delegate::Started(Delegate * const me, QEvt const * const e) {
 								uint8_t baud[4];
 								fifo->Read(baud, 4);
 								len-=4;
-								
+
 								uint32_t combined = ((uint32_t)baud[0] << 24) | ((uint32_t)baud[1] << 16) | ((uint32_t)baud[2] << 8) | (uint32_t)baud[3];
-								
+
 								//read any extra bytes and discard
 								me->discard(fifo, len);
-								
+
 								Evt *evt = new SercomWriteRegReq(lowByte, combined);
 								QF::PUBLISH(evt, me);
 								break;
@@ -659,12 +664,12 @@ QState Delegate::Started(Delegate * const me, QEvt const * const e) {
 								uint8_t dataBytes[3];
 								fifo->Read(dataBytes, 3);
 								len -= 3;
-								
+
 								me->discard(fifo, len);
-								
+
 								Evt *evt = new TimerWritePWM(dataBytes[0], ((uint16_t)dataBytes[1] << 8) | (dataBytes[2]));
 								QF::PUBLISH(evt, me);
-								
+
 								break;
 							}
 							case SEESAW_TIMER_FREQ: {
@@ -672,12 +677,12 @@ QState Delegate::Started(Delegate * const me, QEvt const * const e) {
 								uint8_t dataBytes[3];
 								fifo->Read(dataBytes, 3);
 								len -= 3;
-								
+
 								me->discard(fifo, len);
-								
+
 								Evt *evt = new TimerSetFreq(dataBytes[0], ((uint16_t)dataBytes[1] << 8) | (dataBytes[2]));
 								QF::PUBLISH(evt, me);
-								
+
 								break;
 							}
 						}
@@ -704,12 +709,12 @@ QState Delegate::Started(Delegate * const me, QEvt const * const e) {
 						break;
 					}
 #endif
-					
-#if CONFIG_NEOPIXEL					
+
+#if CONFIG_NEOPIXEL
 					case SEESAW_NEOPIXEL_BASE: {
 						Fifo *fifo = req.getFifo();
 						switch(lowByte){
-						
+
 							case SEESAW_NEOPIXEL_PIN:{
 								uint8_t pin;
 								fifo->Read(&pin, 1);
@@ -718,7 +723,7 @@ QState Delegate::Started(Delegate * const me, QEvt const * const e) {
 								me->discard(fifo, req.getLen());
 								break;
 							}
-							
+
 							case SEESAW_NEOPIXEL_SPEED:{
 								uint8_t speed;
 								fifo->Read(&speed, 1);
@@ -727,22 +732,22 @@ QState Delegate::Started(Delegate * const me, QEvt const * const e) {
 								me->discard(fifo, req.getLen());
 								break;
 							}
-							
+
 							case SEESAW_NEOPIXEL_BUF_LENGTH:{
 								uint8_t d[2];
 								fifo->Read(d, 2);
-								
+
 								Evt *evt = new NeopixelSetBufferLengthReq( ((uint16_t)d[0] << 8) | (uint16_t)d[1]);
 								QF::PUBLISH(evt, me);
-								
+
 								me->discard(fifo, req.getLen());
 								break;
 							}
-							
+
 							case SEESAW_NEOPIXEL_BUF:{
 								uint8_t d[2];
 								fifo->Read(d, 2);
-								
+
 								Evt *evt = new NeopixelSetBufferReq( ((uint16_t)d[0] << 8) | (uint16_t)d[1], fifo);
 								QF::PUBLISH(evt, me);
 							}
@@ -758,7 +763,7 @@ QState Delegate::Started(Delegate * const me, QEvt const * const e) {
 						uint8_t dataBytes[2];
 						fifo->Read(dataBytes, 2);
 						len-=2;
-						
+
 						Evt *evt = new KeypadWriteRegReq(lowByte, (dataBytes[0] << 8) | dataBytes[1]);
 						QF::PUBLISH(evt, me);
 						break;
@@ -773,30 +778,46 @@ QState Delegate::Started(Delegate * const me, QEvt const * const e) {
 						len-=4;
 
 						int32_t combined = ((int32_t)dataBytes[0] << 24) | ((int32_t)dataBytes[1] << 16) | ((int32_t)dataBytes[2] << 8) | (int32_t)dataBytes[3];
-						
+
 						Evt *evt = new EncoderWriteRegReq(lowByte, combined);
 						QF::PUBLISH(evt, me);
 						break;
 					}
 #endif
 
+                    case SEESAW_FOO_BASE:{
+                      Fifo *fifo = req.getFifo();
+                      switch(lowByte){
+                          case SEESAW_FOO_STATUS: {
+                            uint8_t data[1];
+                            fifo->Read(data, 1);
+                            len-=1;
+
+                            Evt *evt = new FooWriteRegReq(lowByte, data[0]);
+                            QF::PUBLISH(evt, me);
+                            break;
+                          }
+                          default: {}
+                      }
+                    }
+
 					default:
 						break;
 				}
 			}
 			status = Q_HANDLED();
-			
+
 			break;
 		}
-		
+
 #if CONFIG_INTERRUPT
 		case GPIO_INTERRUPT_RECEIVED: {
 			LOG_EVENT(e);
 			Q_ASSERT(Delegate::m_intflag > 0);
-			
+
 			Evt *evt = new InterruptSetReq( SEESAW_INTERRUPT_GPIO );
 			QF::PUBLISH(evt, me);
-			
+
 			status = Q_HANDLED();
 			break;
 		}
@@ -840,7 +861,7 @@ void Delegate::break32Bit(uint32_t in, uint8_t *out)
 	uint8_t b2 = (in >> 16) & 0xFF;
 	uint8_t b1 = (in >> 8) & 0xFF;
 	uint8_t b0 = in & 0xFF;
-	
+
 	out[0] = b3;
 	out[1] = b2;
 	out[2] = b1;
